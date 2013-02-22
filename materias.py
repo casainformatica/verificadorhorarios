@@ -7,6 +7,11 @@ Crawler de Informacion academica. Detecta las siguientes irregularidades:
     - Materias que no tienen horarios compatibles con jornada laboral.
 
 Utiliza las librerias pyquery y requests.
+
+Modo de uso:
+>> verificar_programa(path)
+
+path es la ruta a un archivo json con el programa que se quiere verificar.
 """
 
 import json
@@ -166,6 +171,3 @@ def verificar_programa(path='informatica.json'):
         if len(materias) and not superposiciones(materias):
             print "Las materias de {c} no se pueden hacer simultaneamente."\
             .format(c=cuatrimestre)
-
-
-verificar_programa()
