@@ -27,7 +27,7 @@ def _get_clases(pq_curso):
 
     resultado = []
 
-    #la separacion de los campos no es consistente, hay que chequear cada fila
+    # la separacion de los campos no es consistente, hay que chequear cada fila
     for i in range(len(clases)):
         if clases[i] in TIPOS_CURSO:
             resultado.append({'dia': clases[i + 1],
@@ -65,7 +65,7 @@ def get_info_materia(codigo):
 """ ANALIZADOR """
 
 
-#Chequeos:
+# Chequeos:
 def se_dicta(materia):
     """ Devuelve True si hay al menos un curso publicado de la materia. """
     return len(materia['cursos']) > 0
@@ -117,7 +117,6 @@ def _cursos_compatibles(cursos, nuevo_curso):
     return True
 
 
-#PROBAR!
 def superposiciones(materias):
     """
     Devuelve True si hay al menos una combinacion de cursos disponible para
@@ -134,19 +133,39 @@ def superposiciones(materias):
                 if _cursos_compatibles(combinacion, curso):
                     nuevas.append(combinacion + [curso])
 
+            # cuando no hay combinaciones agregar el curso directamente
+            if not combinaciones:
+                nuevas.append([curso])
+
         combinaciones = nuevas
 
     return combinaciones
 
 
-def get_programa():
-    programa = open('informatica.json')
-    cuatrimestres = json.dumps(programa.read())
-    programa.close()
+def verificar_programa(path='informatica.json'):
+    archivo = open(path)
+    programa = json.load(archivo)
+    archivo.close()
 
-    return cuatrimestres
+    for cuatrimestre in programa:
+
+        materias = []
+        for materia in programa[cuatrimestre]:
+            materia = get_info_materia(materia.replace('.', ''))
+
+            if not se_dicta(materia):
+                print "La materia {m} de {c} no tiene cursos publicados."\
+                .format(m=materia['nombre'], c=cuatrimestre)
+            else:
+                materias.append(materia)
+                if not horario_laboral(materia):
+                    print ("La materia {m} de {c} no tiene horarios " +
+                           "compatibles con jornada laboral.").format(
+                            m=materia['nombre'], c=cuatrimestre)
+
+        if len(materias) and not superposiciones(materias):
+            print "Las materias de {c} no se pueden hacer simultaneamente."\
+            .format(c=cuatrimestre)
 
 
-#TODO recorrer cuatrimestres, aplicar chequeos, imprimir resultados
-
-#print get_info_materia("6301")
+verificar_programa()
