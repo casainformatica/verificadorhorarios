@@ -79,7 +79,7 @@ def se_dicta(materia):
 def horario_laboral(materia):
     """
     Devuelve True si hay al menos un curso publicado con horario para alumnos
-    que trabajan (lunes a viernes a partir de las 19:00 y sabados).
+    que trabajan (lunes a viernes a partir de las 18:00 y sabados).
     """
 
     for curso in materia['cursos']:
@@ -87,7 +87,7 @@ def horario_laboral(materia):
         compatible = True
         for clase in curso['clases']:
 
-            if clase['dia'] != 'sabado' and clase['comienzo'] < '19:00':
+            if clase['dia'] != 'sabado' and clase['comienzo'] < '18:00':
                 compatible = False
                 break
 
