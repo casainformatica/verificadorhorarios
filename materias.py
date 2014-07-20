@@ -1,3 +1,5 @@
+# -*- coding: latin-1 -*-
+
 """
 Crawler de Informacion academica. Detecta las siguientes irregularidades:
 
@@ -17,6 +19,7 @@ path es la ruta a un archivo json con el programa que se quiere verificar.
 import json
 from pyquery import PyQuery as pq
 import requests
+import gestion
 
 
 """ CRAWLER """
@@ -48,12 +51,19 @@ def get_info_materia(codigo):
     especificada.
     """
 
+    # Si la materia es del departamento de Gestión está hardcodeada.
+    if codigo[:2] == '71':
+	toReturn = gestion.obtener_materia(codigo[2:])
+	return toReturn
+
     materia = {}
 
     codigo = codigo.replace('.', '')
     d = pq(requests.get(URL_MATERIA.format(materia=codigo)).text)
-    materia['nombre'] = d('#principal h3').text().replace(
-                                                'Cursos de la materia ', '')
+    materia['nombre'] = d('#principal h3').text().replace('Cursos de la materia ', '')\
+            .replace('''IMPORTANTE: LOS ALUMNOS DEBERAN INSCRIBIRSE UNICAMENTE \
+A LAS ASIGNATURAS CORRESPONDIENTES AL PLAN DE ESTUDIOS EN \
+EL QUE ESTAN INSCRIPTOS ''', '')
 
     materia['cursos'] = []
     for tr in d('#principal tr'):
@@ -159,15 +169,19 @@ def verificar_programa(path='informatica.json'):
             materia = get_info_materia(materia.replace('.', ''))
 
             if not se_dicta(materia):
-                print "La materia {m} de {c} no tiene cursos publicados."\
+                print ("La materia {m} de {c} no tiene cursos publicados.")\
                 .format(m=materia['nombre'], c=cuatrimestre)
             else:
                 materias.append(materia)
                 if not horario_laboral(materia):
                     print ("La materia {m} de {c} no tiene horarios " +
                            "compatibles con jornada laboral.").format(
-                            m=materia['nombre'], c=cuatrimestre)
+                            m=materia['nombre'].encode('utf-8'), c=cuatrimestre)
 
         if len(materias) and not superposiciones(materias):
-            print "Las materias de {c} no se pueden hacer simultaneamente."\
+            print ("Las materias de {c} no se pueden hacer simultaneamente.")\
             .format(c=cuatrimestre)
+
+
+if __name__ == "__main__":
+    verificar_programa()
