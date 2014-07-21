@@ -19,6 +19,9 @@ path es la ruta a un archivo json con el programa que se quiere verificar.
 import json
 from pyquery import PyQuery as pq
 import requests
+import materia
+import curso
+import horarioDeCursada
 import gestion
 
 
@@ -26,23 +29,19 @@ import gestion
 
 URL_MATERIA = 'http://intra.fi.uba.ar/insc/consultas/consulta_cursos.jsp?\
 materia={materia}'
-TIPOS_CURSO = ['CP', 'CPO', 'DC', 'EP', 'EPO', 'LO', 'P', 'PO', 'T', 'TO',
-               'TP', 'TPO', 'VT', 'SP']
 
 
-def _get_clases(pq_curso):
+def get_info_horario_cursada(pq_curso):
     clases = pq_curso('.tablaitem:eq(4)').text().split()
 
-    resultado = []
+    horarios = []
 
     # la separacion de los campos no es consistente, hay que chequear cada fila
     for i in range(len(clases)):
-        if clases[i] in TIPOS_CURSO:
-            resultado.append({'dia': clases[i + 1],
-                              'comienzo': clases[i + 2],
-                              'fin': clases[i + 3]})
+        if clases[i] in horarioDeCursada.TIPOS:
+            horarios.append(horarioDeCursada.HorarioDeCursada(clases[i + 1], clases[i + 2], clases[i + 3]))
 
-    return resultado
+    return horarios
 
 
 def get_info_materia(codigo):
@@ -53,58 +52,31 @@ def get_info_materia(codigo):
 
     # Si la materia es del departamento de Gestión está hardcodeada.
     if codigo[:2] == '71':
-	toReturn = gestion.obtener_materia(codigo[2:])
-	return toReturn
+        return gestion.obtener_materia(codigo[2:])
 
-    materia = {}
+    materia_actual = materia.Materia()
 
     codigo = codigo.replace('.', '')
     d = pq(requests.get(URL_MATERIA.format(materia=codigo)).text)
-    materia['nombre'] = d('#principal h3').text().replace('Cursos de la materia ', '')\
+    materia_actual.nombre = d('#principal h3').text().replace('Cursos de la materia ', '')\
             .replace('''IMPORTANTE: LOS ALUMNOS DEBERAN INSCRIBIRSE UNICAMENTE \
 A LAS ASIGNATURAS CORRESPONDIENTES AL PLAN DE ESTUDIOS EN \
 EL QUE ESTAN INSCRIPTOS ''', '')
 
-    materia['cursos'] = []
     for tr in d('#principal tr'):
         pq_curso = pq(tr)
         profesor = pq_curso('.tablaitem:eq(2)').text()
 
         if profesor:
-            materia['cursos'].append({'profesor': profesor,
-                                      'clases': _get_clases(pq_curso)})
+            curso_actual = curso.Curso()
+            curso_actual.docentes = profesor
+            curso_actual.horarios = get_info_horario_cursada(pq_curso)
+            materia_actual.agregar_curso(curso_actual)
 
-    return materia
+    return materia_actual
 
 
 """ ANALIZADOR """
-
-
-# Chequeos:
-def se_dicta(materia):
-    """ Devuelve True si hay al menos un curso publicado de la materia. """
-    return len(materia['cursos']) > 0
-
-
-def horario_laboral(materia):
-    """
-    Devuelve True si hay al menos un curso publicado con horario para alumnos
-    que trabajan (lunes a viernes a partir de las 18:00 y sabados).
-    """
-
-    for curso in materia['cursos']:
-
-        compatible = True
-        for clase in curso['clases']:
-
-            if clase['dia'] != 'sabado' and clase['comienzo'] < '18:00':
-                compatible = False
-                break
-
-        if compatible:
-            return True
-
-    return False
 
 
 def _clases_compatibles(c1, c2):
@@ -165,23 +137,27 @@ def verificar_programa(path='informatica.json'):
     for cuatrimestre in programa:
 
         materias = []
-        for materia in programa[cuatrimestre]:
-            materia = get_info_materia(materia.replace('.', ''))
+        for materia_actual in programa[cuatrimestre]:
+            materia_actual = get_info_materia(materia_actual.replace('.', ''))
 
-            if not se_dicta(materia):
+            if not materia_actual.se_dicta():
                 print ("La materia {m} de {c} no tiene cursos publicados.")\
-                .format(m=materia['nombre'], c=cuatrimestre)
+                .format(m=materia_actual.nombre, c=cuatrimestre)
             else:
-                materias.append(materia)
-                if not horario_laboral(materia):
+                materias.append(materia_actual)
+                if not materia_actual.compatible_horario_laboral():
                     print ("La materia {m} de {c} no tiene horarios " +
                            "compatibles con jornada laboral.").format(
-                            m=materia['nombre'].encode('utf-8'), c=cuatrimestre)
+                            m=materia_actual.nombre.encode('utf-8'), c=cuatrimestre)
 
-        if len(materias) and not superposiciones(materias):
+        if len(materias) > 0 and not superposiciones(materias):
             print ("Las materias de {c} no se pueden hacer simultaneamente.")\
             .format(c=cuatrimestre)
 
 
 if __name__ == "__main__":
+    print "Verificando plan de informática..."
     verificar_programa()
+    
+    print "Verificando plan de sistemas..."
+    verificar_programa('sistemas.json')

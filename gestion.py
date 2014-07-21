@@ -116,8 +116,6 @@ def cargar_materias():
 
 def obtener_materia(codigo):
     return _materias[codigo]
-    # return materia[codigo] if codigo in materia else default
-
 
 
 cargar_materias()
