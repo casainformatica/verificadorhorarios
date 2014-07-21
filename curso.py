@@ -1,5 +1,5 @@
 
-def Curso(Object):
+class Curso:
 
     def __init__(self):
         self.docentes = ""
