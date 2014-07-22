@@ -79,54 +79,42 @@ EL QUE ESTAN INSCRIPTOS ''', '')
 """ ANALIZADOR """
 
 
-def _clases_compatibles(c1, c2):
-    if c1['dia'] == c2['dia']:
-        return c1['fin'] <= c2['comienzo'] or c1['comienzo'] >= c2['fin']
-
-    return True
-
-
-def _cursos_compatibles(cursos, nuevo_curso):
+def cursos_son_compatibles(cursos, nuevo_curso):
+    """ Devuelve True si se puede cursar el curso con la lista de cursos anterior.
     """
-    Devuelve True si se puede cursar el curso con la lista de cursos anterior.
-    """
-
-    if not cursos:
+    if len(cursos) == 0:
         return True
 
-    for curso in cursos:
-        for clase in curso['clases']:
-
-            for nueva_clase in nuevo_curso['clases']:
-                if not _clases_compatibles(clase, nueva_clase):
-                    return False
+    for curso_actual in cursos:
+        if not curso_actual.es_compatible_con(nuevo_curso):
+            return False
 
     return True
 
 
-def superposiciones(materias):
+def hay_superposicion_de_materias(materias):
     """
     Devuelve True si hay al menos una combinacion de cursos disponible para
     cursar simultaneamente la lista de materias indicada.
     """
 
     combinaciones = []
-    for materia in materias:
+    for materia_actual in materias:
 
         nuevas = []
-        for curso in materia['cursos']:
+        for curso_actual in materia.cursos:
 
             for combinacion in combinaciones:
-                if _cursos_compatibles(combinacion, curso):
-                    nuevas.append(combinacion + [curso])
+                if cursos_son_compatibles(combinacion, curso_actual):
+                    nuevas.append(combinacion + [curso_actual])
 
             # cuando no hay combinaciones agregar el curso directamente
-            if not combinaciones:
-                nuevas.append([curso])
+            if len(combinaciones) == 0:
+                nuevas.append([curso_actual])
 
         combinaciones = nuevas
 
-    return combinaciones
+    return len(combinaciones) == 0
 
 
 def verificar_programa(path='informatica.json'):
@@ -145,12 +133,12 @@ def verificar_programa(path='informatica.json'):
                 .format(m=materia_actual.nombre, c=cuatrimestre)
             else:
                 materias.append(materia_actual)
-                if not materia_actual.compatible_horario_laboral():
+                if not materia_actual.compatible_con_horario_laboral():
                     print ("La materia {m} de {c} no tiene horarios " +
                            "compatibles con jornada laboral.").format(
                             m=materia_actual.nombre.encode('utf-8'), c=cuatrimestre)
 
-        if len(materias) > 0 and not superposiciones(materias):
+        if len(materias) > 0 and hay_superposicion_de_materias(materias):
             print ("Las materias de {c} no se pueden hacer simultaneamente.")\
             .format(c=cuatrimestre)
 
