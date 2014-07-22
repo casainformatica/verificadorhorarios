@@ -17,63 +17,7 @@ path es la ruta a un archivo json con el programa que se quiere verificar.
 """
 
 import json
-from pyquery import PyQuery as pq
-import requests
-from materia import Materia
-from curso import Curso
-from horarioDeCursada import HorarioDeCursada, TIPOS as TIPOS_HORARIO_CURSADA
-import gestion
-
-
-""" CRAWLER """
-
-URL_MATERIA = 'http://intra.fi.uba.ar/insc/consultas/consulta_cursos.jsp?\
-materia={materia}'
-
-
-def get_info_horario_cursada(pq_curso):
-    clases = pq_curso('.tablaitem:eq(4)').text().split()
-
-    horarios = []
-
-    # la separacion de los campos no es consistente, hay que chequear cada fila
-    for i in range(len(clases)):
-        if clases[i] in TIPOS_HORARIO_CURSADA:
-            horarios.append(HorarioDeCursada(clases[i + 1], clases[i + 2], clases[i + 3]))
-
-    return horarios
-
-
-def get_info_materia(codigo):
-    """
-    Extrae de info academica los horarios de los cursos de la materia
-    especificada.
-    """
-
-    # Si la materia es del departamento de Gestión está hardcodeada.
-    if codigo[:2] == '71':
-        return gestion.obtener_materia(codigo[2:])
-
-    materia = Materia()
-
-    codigo = codigo.replace('.', '')
-    d = pq(requests.get(URL_MATERIA.format(materia=codigo)).text)
-    materia.nombre = d('#principal h3').text().replace('Cursos de la materia ', '')\
-            .replace('''IMPORTANTE: LOS ALUMNOS DEBERAN INSCRIBIRSE UNICAMENTE \
-A LAS ASIGNATURAS CORRESPONDIENTES AL PLAN DE ESTUDIOS EN \
-EL QUE ESTAN INSCRIPTOS ''', '')
-
-    for tr in d('#principal tr'):
-        pq_curso = pq(tr)
-        profesor = pq_curso('.tablaitem:eq(2)').text()
-
-        if profesor:
-            curso = Curso()
-            curso.docentes = profesor
-            curso.horarios = get_info_horario_cursada(pq_curso)
-            materia.agregar_curso(curso)
-
-    return materia
+import informacionmaterias
 
 
 def cursos_son_compatibles(cursos, nuevo_curso):
@@ -122,7 +66,7 @@ def verificar_plan_de_estudios(archivo_plan_estudios):
 
         materias = []
         for materia in plan_de_estudios[cuatrimestre]:
-            materia = get_info_materia(materia.replace('.', ''))
+            materia = informacionmaterias.obtener_materia(materia.replace('.', ''))
 
             if not materia.se_dicta():
                 print ("La materia {m} de {c} no tiene cursos publicados.")\
