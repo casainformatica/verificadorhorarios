@@ -2,6 +2,7 @@
 TIPOS = ['CP', 'CPO', 'DC', 'EP', 'EPO', 'LO', 'P', 'PO', 'T', 'TO',
                'TP', 'TPO', 'VT', 'SP']
 
+
 class HorarioDeCursada:
 
     def __init__(self, dia_de_la_semana, hora_desde, hora_hasta):
@@ -22,4 +23,5 @@ class HorarioDeCursada:
         if self.dia_de_la_semana != otro.dia_de_la_semana:
             return True
 
-        return self.hora_hasta <= otro.hora_desde or self.hora_desde >= otro.hora_hasta
+        return self.hora_hasta <= otro.hora_desde or \
+               self.hora_desde >= otro.hora_hasta

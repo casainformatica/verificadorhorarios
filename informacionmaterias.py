@@ -19,7 +19,9 @@ def obtener_horarios(pq_curso):
     # la separacion de los campos no es consistente, hay que chequear cada fila
     for i in range(len(clases)):
         if clases[i] in TIPOS_HORARIO_CURSADA:
-            horarios.append(HorarioDeCursada(clases[i + 1], clases[i + 2], clases[i + 3]))
+            horarios.append(HorarioDeCursada(clases[i + 1],
+                                             clases[i + 2],
+                                             clases[i + 3]))
 
     return horarios
 
@@ -29,7 +31,8 @@ def obtener_materia(codigo):
     especificada.
     """
 
-    # Si la materia es del departamento de Gestión se consulta un archivo aparte.
+    # Si la materia es del departamento de Gestión se obtiene la información
+    # de un módulo aparte.
     if codigo[:2] == '71':
         return materiasgestion.obtener_materia(codigo[2:])
 
@@ -37,8 +40,9 @@ def obtener_materia(codigo):
 
     codigo = codigo.replace('.', '')
     d = PyQuery(requests.get(URL_MATERIA.format(materia=codigo)).text)
-    materia.nombre = d('#principal h3').text().replace('Cursos de la materia ', '')\
-            .replace('''IMPORTANTE: LOS ALUMNOS DEBERAN INSCRIBIRSE UNICAMENTE \
+    materia.nombre = d('#principal h3').text()\
+        .replace('Cursos de la materia ', '')\
+        .replace('''IMPORTANTE: LOS ALUMNOS DEBERAN INSCRIBIRSE UNICAMENTE \
 A LAS ASIGNATURAS CORRESPONDIENTES AL PLAN DE ESTUDIOS EN \
 EL QUE ESTAN INSCRIPTOS ''', '')
 

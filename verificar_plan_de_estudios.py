@@ -1,19 +1,20 @@
 # -*- coding: latin-1 -*-
 
 """
-Crawler de Informacion academica. Detecta las siguientes irregularidades:
+Crawler de Información Académica. Detecta las siguientes irregularidades:
 
     - Materias obligatorias que no se dictan en el cuatrimestre.
-    - Materias del mismo cuatrimestre (segun programa) que no tienen horarios
-    compatibles entre si.
+    - Materias del mismo cuatrimestre del plan de estudios que no tienen
+    horarios compatibles entre sí.
     - Materias que no tienen horarios compatibles con jornada laboral.
 
-Utiliza las librerias pyquery y requests.
+Utiliza las librerías pyquery y requests.
 
 Modo de uso:
->> verificar_programa(path)
+>> verificar_programa(archivo_plan_estudios)
 
-path es la ruta a un archivo json con el programa que se quiere verificar.
+archivo_plan_estudios es la ruta a un archivo json con el plan de estudios
+que se quiere verificar.
 """
 
 import json
@@ -21,7 +22,8 @@ import informacionmaterias
 
 
 def cursos_son_compatibles(cursos, nuevo_curso):
-    """ Devuelve True si se puede cursar el curso con la lista de cursos anterior.
+    """ Devuelve True si los horarios del nuevo curso son compatibles con los
+    de los otros.
     """
     if len(cursos) == 0:
         return True
@@ -66,7 +68,8 @@ def verificar_plan_de_estudios(archivo_plan_estudios):
 
         materias = []
         for materia in plan_de_estudios[cuatrimestre]:
-            materia = informacionmaterias.obtener_materia(materia.replace('.', ''))
+            codigo_materia = materia.replace('.', '')
+            materia = informacionmaterias.obtener_materia(codigo_materia)
 
             if not materia.se_dicta():
                 print ("La materia {m} de {c} no tiene cursos publicados.")\
@@ -86,6 +89,6 @@ def verificar_plan_de_estudios(archivo_plan_estudios):
 if __name__ == "__main__":
     print "Verificando plan de informática..."
     verificar_plan_de_estudios('informatica.json')
-    
+
     print "Verificando plan de sistemas..."
     verificar_plan_de_estudios('sistemas.json')
