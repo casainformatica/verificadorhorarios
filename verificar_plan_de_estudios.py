@@ -19,9 +19,9 @@ path es la ruta a un archivo json con el programa que se quiere verificar.
 import json
 from pyquery import PyQuery as pq
 import requests
-import materia
-import curso
-import horarioDeCursada
+from materia import Materia
+from curso import Curso
+from horarioDeCursada import HorarioDeCursada, TIPOS as TIPOS_HORARIO_CURSADA
 import gestion
 
 
@@ -38,8 +38,8 @@ def get_info_horario_cursada(pq_curso):
 
     # la separacion de los campos no es consistente, hay que chequear cada fila
     for i in range(len(clases)):
-        if clases[i] in horarioDeCursada.TIPOS:
-            horarios.append(horarioDeCursada.HorarioDeCursada(clases[i + 1], clases[i + 2], clases[i + 3]))
+        if clases[i] in TIPOS_HORARIO_CURSADA:
+            horarios.append(HorarioDeCursada(clases[i + 1], clases[i + 2], clases[i + 3]))
 
     return horarios
 
@@ -54,11 +54,11 @@ def get_info_materia(codigo):
     if codigo[:2] == '71':
         return gestion.obtener_materia(codigo[2:])
 
-    materia_actual = materia.Materia()
+    materia = Materia()
 
     codigo = codigo.replace('.', '')
     d = pq(requests.get(URL_MATERIA.format(materia=codigo)).text)
-    materia_actual.nombre = d('#principal h3').text().replace('Cursos de la materia ', '')\
+    materia.nombre = d('#principal h3').text().replace('Cursos de la materia ', '')\
             .replace('''IMPORTANTE: LOS ALUMNOS DEBERAN INSCRIBIRSE UNICAMENTE \
 A LAS ASIGNATURAS CORRESPONDIENTES AL PLAN DE ESTUDIOS EN \
 EL QUE ESTAN INSCRIPTOS ''', '')
@@ -68,15 +68,12 @@ EL QUE ESTAN INSCRIPTOS ''', '')
         profesor = pq_curso('.tablaitem:eq(2)').text()
 
         if profesor:
-            curso_actual = curso.Curso()
-            curso_actual.docentes = profesor
-            curso_actual.horarios = get_info_horario_cursada(pq_curso)
-            materia_actual.agregar_curso(curso_actual)
+            curso = Curso()
+            curso.docentes = profesor
+            curso.horarios = get_info_horario_cursada(pq_curso)
+            materia.agregar_curso(curso)
 
-    return materia_actual
-
-
-""" ANALIZADOR """
+    return materia
 
 
 def cursos_son_compatibles(cursos, nuevo_curso):
@@ -85,24 +82,23 @@ def cursos_son_compatibles(cursos, nuevo_curso):
     if len(cursos) == 0:
         return True
 
-    for curso_actual in cursos:
-        if not curso_actual.es_compatible_con(nuevo_curso):
+    for curso in cursos:
+        if not curso.es_compatible_con(nuevo_curso):
             return False
 
     return True
 
 
 def hay_superposicion_de_materias(materias):
-    """
-    Devuelve True si hay al menos una combinacion de cursos disponible para
+    """ Devuelve True si hay al menos una combinacion de cursos disponible para
     cursar simultaneamente la lista de materias indicada.
     """
 
     combinaciones = []
-    for materia_actual in materias:
+    for materia in materias:
 
         nuevas = []
-        for curso_actual in materia_actual.cursos:
+        for curso_actual in materia.cursos:
 
             for combinacion in combinaciones:
                 if cursos_son_compatibles(combinacion, curso_actual):
@@ -117,26 +113,26 @@ def hay_superposicion_de_materias(materias):
     return len(combinaciones) == 0
 
 
-def verificar_programa(path='informatica.json'):
-    archivo = open(path)
-    programa = json.load(archivo)
+def verificar_plan_de_estudios(archivo_plan_estudios):
+    archivo = open(archivo_plan_estudios)
+    plan_de_estudios = json.load(archivo)
     archivo.close()
 
-    for cuatrimestre in programa:
+    for cuatrimestre in plan_de_estudios:
 
         materias = []
-        for materia_actual in programa[cuatrimestre]:
-            materia_actual = get_info_materia(materia_actual.replace('.', ''))
+        for materia in plan_de_estudios[cuatrimestre]:
+            materia = get_info_materia(materia.replace('.', ''))
 
-            if not materia_actual.se_dicta():
+            if not materia.se_dicta():
                 print ("La materia {m} de {c} no tiene cursos publicados.")\
-                .format(m=materia_actual.nombre, c=cuatrimestre)
+                .format(m=materia.nombre, c=cuatrimestre)
             else:
-                materias.append(materia_actual)
-                if not materia_actual.compatible_con_horario_laboral():
+                materias.append(materia)
+                if not materia.compatible_con_horario_laboral():
                     print ("La materia {m} de {c} no tiene horarios " +
                            "compatibles con jornada laboral.").format(
-                            m=materia_actual.nombre.encode('utf-8'), c=cuatrimestre)
+                            m=materia.nombre.encode('utf-8'), c=cuatrimestre)
 
         if len(materias) > 0 and hay_superposicion_de_materias(materias):
             print ("Las materias de {c} no se pueden hacer simultaneamente.")\
@@ -145,7 +141,7 @@ def verificar_programa(path='informatica.json'):
 
 if __name__ == "__main__":
     print "Verificando plan de informática..."
-    verificar_programa()
+    verificar_plan_de_estudios('informatica.json')
     
     print "Verificando plan de sistemas..."
-    verificar_programa('sistemas.json')
+    verificar_plan_de_estudios('sistemas.json')
