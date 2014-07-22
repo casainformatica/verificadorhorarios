@@ -9,7 +9,6 @@ class Curso:
         """ Devuelve True si todos los horarios del curso
         son compatibles con el horario laboral.
         """
-        print self.horarios
         return all(horario.compatible_con_horario_laboral() for horario in self.horarios)
 
     def es_compatible_con(self, otro):

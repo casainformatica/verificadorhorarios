@@ -102,7 +102,7 @@ def hay_superposicion_de_materias(materias):
     for materia_actual in materias:
 
         nuevas = []
-        for curso_actual in materia.cursos:
+        for curso_actual in materia_actual.cursos:
 
             for combinacion in combinaciones:
                 if cursos_son_compatibles(combinacion, curso_actual):
