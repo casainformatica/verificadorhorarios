@@ -9,7 +9,7 @@ class HorarioDeCursada:
         self.hora_desde = hora_desde
         self.hora_hasta = hora_hasta
 
-    def compatible_con_horario_laboral(self):
+    def es_compatible_con_horario_laboral(self):
         """ Devuelve True si es compatible para alumnos que trabajan
         (lunes a viernes a partir de las 18:00 y sabados).
         """

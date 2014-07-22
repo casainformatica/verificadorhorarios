@@ -73,7 +73,7 @@ def verificar_plan_de_estudios(archivo_plan_estudios):
                 .format(m=materia.nombre, c=cuatrimestre)
             else:
                 materias.append(materia)
-                if not materia.compatible_con_horario_laboral():
+                if not materia.es_compatible_con_horario_laboral():
                     print ("La materia {m} de {c} no tiene horarios " +
                            "compatibles con jornada laboral.").format(
                             m=materia.nombre.encode('utf-8'), c=cuatrimestre)

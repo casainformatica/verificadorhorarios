@@ -5,11 +5,11 @@ class Curso:
         self.docentes = ""
         self.horarios = []
 
-    def compatible_con_horario_laboral(self):
+    def es_compatible_con_horario_laboral(self):
         """ Devuelve True si todos los horarios del curso
         son compatibles con el horario laboral.
         """
-        return all(horario.compatible_con_horario_laboral() for horario in self.horarios)
+        return all(horario.es_compatible_con_horario_laboral() for horario in self.horarios)
 
     def es_compatible_con(self, otro):
         for horario in self.horarios:
